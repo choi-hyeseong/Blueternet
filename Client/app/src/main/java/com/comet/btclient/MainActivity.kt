@@ -9,3 +9,5 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
     }
 }
+
+fun Any.getClassName() : String = this::class.java.name

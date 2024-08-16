@@ -29,14 +29,23 @@ class BlueternetRepository(private val bluetoothService: BluetoothService) : Rem
         return bluetoothService.findDevices()
     }
 
-    // 연결
+    // 연결. 연결실패시 IO Exception 발생
     override suspend fun connect(pairedBluetoothDevice: PairedBluetoothDevice, responseCallback: ResponseCallback) {
-        if (isConnected && connectThread?.isInterrupted == false)
-            throw IllegalStateException("이미 연결중입니다.")
+        if (isConnected && connectThread?.isInterrupted == false) throw IllegalStateException("이미 연결중입니다.")
         val device = bluetoothService.getRemoteDevice(pairedBluetoothDevice.address)
-        val socket = bluetoothService.connect(uuid, device) //연결
-        connectThread = BluetoothRunner(socket, responseCallback).also { it.start() }
-        isConnected = true
+        kotlin.runCatching {
+            Log.w(getClassName(), "연결 시도 중..")
+            bluetoothService.connect(uuid, device) //연결
+        }.onSuccess {
+            Log.w(getClassName(), "연결 성공.")
+            connectThread = BluetoothRunner(it, responseCallback).also { it.start() }
+            isConnected = true
+        }.onFailure {
+            Log.w(getClassName(), "연결 실패..")
+            throw it
+        }
+
+
     }
 
     // 연결 종료

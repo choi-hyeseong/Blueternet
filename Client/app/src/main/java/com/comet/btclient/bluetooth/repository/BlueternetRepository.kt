@@ -16,13 +16,12 @@ import java.io.BufferedWriter
 import java.util.UUID
 import kotlin.concurrent.thread
 
-// Bluetooth를 사용하는 구현체
+// Bluetooth를 사용하는 구현체. Stateful Repository로 구현 (VM 과부화 X)
 class BlueternetRepository(private val bluetoothService: BluetoothService) : RemoteInternetRepository {
 
     // 현재 연결여부
     private var isConnected: Boolean = false
     private val uuid: UUID = UUID.fromString("a7edee4b-2cae-4195-9719-6175e78eda85") //unique id
-    private var callback: ResponseCallback? = null
     private var connectThread: BluetoothRunner? = null //소켓 핸들링하는 thread
 
     // 디바이스 검색
@@ -34,18 +33,15 @@ class BlueternetRepository(private val bluetoothService: BluetoothService) : Rem
     override suspend fun connect(pairedBluetoothDevice: PairedBluetoothDevice, responseCallback: ResponseCallback) {
         if (isConnected && connectThread?.isInterrupted == false)
             throw IllegalStateException("이미 연결중입니다.")
-        callback = responseCallback
         val device = bluetoothService.getRemoteDevice(pairedBluetoothDevice.address)
         val socket = bluetoothService.connect(uuid, device) //연결
         connectThread = BluetoothRunner(socket, responseCallback).also { it.start() }
-        callback?.onOpen()
         isConnected = true
     }
 
     // 연결 종료
     override suspend fun disconnect() {
         connectThread?.interrupt()
-        callback?.onClose()
         isConnected = false
     }
 
@@ -68,6 +64,7 @@ class BlueternetRepository(private val bluetoothService: BluetoothService) : Rem
                     line = bufferedReader.readLine()
                 }
             }.onFailure {
+                Log.w(getClassName(), "Can't read message : ${it.message}")
                 interrupt()
             }
         }

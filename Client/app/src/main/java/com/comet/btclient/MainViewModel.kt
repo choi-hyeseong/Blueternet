@@ -1,5 +1,6 @@
 package com.comet.btclient
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -67,6 +68,7 @@ class MainViewModel(private val bluetoothRepository: BlueternetRepository) : Vie
     }
 
     fun request(url : String, contentType : String, body : String?) {
+        Log.w(getClassName(),  "$url, $contentType, $body")
         CoroutineScope(Dispatchers.IO).launch {
             if (!validate(url, contentType))
                 errorLiveData.postValue("입력란이 비어 있습니다.")

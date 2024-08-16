@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         activityMainBinding = null
+        viewModel.disconnect()
     }
 
     fun checkBluetoothSupport() {

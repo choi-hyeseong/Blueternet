@@ -50,7 +50,7 @@ class BlueternetRepository(private val bluetoothService: BluetoothService) : Rem
 
     // 연결 종료
     override suspend fun disconnect() {
-        connectThread?.interrupt()
+        connectThread?.close()
         isConnected = false
     }
 
@@ -58,7 +58,7 @@ class BlueternetRepository(private val bluetoothService: BluetoothService) : Rem
         connectThread?.send(requestJson)
     }
 
-    class BluetoothRunner(socket: BluetoothSocket, private val callback: ResponseCallback) : Thread() {
+    class BluetoothRunner(private val socket: BluetoothSocket, private val callback: ResponseCallback) : Thread() {
 
         private val bufferedWriter: BufferedWriter by lazy { socket.outputStream.bufferedWriter() }
         private val bufferedReader: BufferedReader by lazy { socket.inputStream.bufferedReader() }
@@ -68,19 +68,31 @@ class BlueternetRepository(private val bluetoothService: BluetoothService) : Rem
             kotlin.runCatching {
                 var line = bufferedReader.readLine()
                 while (line != null) {
+                    //deserialize
                     val response = gson.fromJson(line, ResponseJson::class.java)
                     callback.onMessage(response)
                     line = bufferedReader.readLine()
                 }
             }.onFailure {
                 Log.w(getClassName(), "Can't read message : ${it.message}")
-                interrupt()
+                // 인터럽트 발생이 아닌 경우에만
+                if (it !is InterruptedException)
+                    close()
             }
+        }
+
+        fun close() {
+            interrupt()
+            socket.close()
         }
 
         fun send(requestJson: RequestJson) {
             kotlin.runCatching {
+                val str = gson.toJson(requestJson)
                 bufferedWriter.write(gson.toJson(requestJson))
+                bufferedWriter.write("\n")
+                bufferedWriter.flush() // flush를 해줘야 출력됨
+                Log.w(getClassName(), str)
             }.onFailure {
                 Log.w(getClassName(), "Can't send message with $requestJson")
             }

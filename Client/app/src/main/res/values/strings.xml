@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">BTClient</string>
-    <string name="start">시작</string>
     <string name="stop">종료</string>
     <string name="result">요청 결과</string>
     <string name="connect">연결</string>

@@ -39,7 +39,7 @@
         app:layout_constraintTop_toTopOf="@+id/guideline4" />
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/response"
         android:layout_width="0dp"
         android:layout_margin="16dp"
         android:layout_height="0dp"
@@ -57,7 +57,7 @@
         app:layout_constraintGuide_percent="0.65" />
 
     <Button
-        android:id="@+id/button3"
+        android:id="@+id/connect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
@@ -76,12 +76,15 @@
         app:layout_constraintTop_toBottomOf="@+id/list_ble">
 
         <RadioButton
+            android:id="@+id/www"
             android:layout_width="wrap_content"
             android:text="x-www-form-urlencoded"
             android:layout_marginRight="16dp"
+            android:checked="true"
             android:layout_height="25dp" />
 
         <RadioButton
+            android:id="@+id/json"
             android:layout_width="wrap_content"
             android:layout_height="25dp"
             android:text="json"/>
@@ -99,6 +102,7 @@
         app:layout_constraintTop_toBottomOf="@+id/content_group" />
 
     <EditText
+        android:id="@+id/body"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_margin="16dp"
@@ -116,7 +120,7 @@
         app:layout_constraintGuide_percent="0.42" />
 
     <Button
-        android:id="@+id/button4"
+        android:id="@+id/request"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginLeft="16dp"
@@ -127,7 +131,7 @@
         app:layout_constraintTop_toTopOf="@+id/guideline6" />
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/disconnect"
         android:layout_width="0dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"

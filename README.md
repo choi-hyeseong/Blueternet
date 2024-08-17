@@ -6,9 +6,6 @@ Experience Internet using Bluetooth
 ### ETC
 kotlin Coroutine, MVVM Pattern, Okhttp 등 사용. 테스트는 무료 api를 제공해주는 manana.kr 사용.
 
-### Support Up to Android 9
-안드로이드 12에서는 퍼미션 체크로직이 빠져 있어 실행시 강제종료가 발생할 수 있습니다. 이때 앱 삭제창에서 권한을 수동으로 허용하면 문제없이 작동합니다. - Bug) 1
-
 ![KakaoTalk_20240816_173258470](https://github.com/user-attachments/assets/956b8742-7c20-44a5-af6e-5e971e46322d)
 
 ### 이게 무엇인가요?

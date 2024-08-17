@@ -1,8 +1,11 @@
 package com.comet.btclient
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Html
@@ -13,17 +16,25 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
 import com.comet.btclient.bluetooth.dao.BluetoothService
 import com.comet.btclient.bluetooth.repository.BlueternetRepository
+import com.comet.btclient.bluetooth.repository.RemoteInternetRepository
 import com.comet.btclient.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private val bluetoothManager : BluetoothManager by lazy {  getSystemService(BluetoothManager::class.java) } //lazy로 접근해서 onCreate 이전에 호출되는것 방지
+    private val PERM_CODE = 200
     private var activityMainBinding : ActivityMainBinding? = null
-    private val activityResultLauncher: ActivityResultLauncher<Intent> =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    private val activityResultLauncher: ActivityResultLauncher<Intent> = initBluetoothCallback()
+    private val bluetoothManager : BluetoothManager by lazy {  getSystemService(BluetoothManager::class.java) } //lazy로 접근해서 onCreate 이전에 호출되는것 방지
+    private val bluetoothRepository : RemoteInternetRepository by lazy {  BlueternetRepository(BluetoothService(bluetoothManager)) } //bad usage (hilt로 inject 시켜줘서 따로 따로 하는게 좋지만.. 토이프로젝트라서 일단 이렇게 사용)
+    private val viewModel : MainViewModel by lazy { ViewModelProvider(this, MainViewModelFactory(bluetoothRepository))[MainViewModel::class.java] } //lazy하게 접근해서 바로 초기화 안되게
+
+    // 블루투스 허용 콜백
+    private fun initBluetoothCallback() : ActivityResultLauncher<Intent> {
+        return registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK) {
                 init()
             }
@@ -32,19 +43,18 @@ class MainActivity : AppCompatActivity() {
                 finish()
             }
         }
-    private val viewModel : MainViewModel by lazy {
-        val bluetoothRepository = BlueternetRepository(BluetoothService(bluetoothManager)) //bad usage (hilt로 inject 시켜줘서 따로 따로 하는게 좋지만.. 토이프로젝트라서 일단 이렇게 사용)
-        ViewModelProvider(this, MainViewModelFactory(bluetoothRepository))[MainViewModel::class.java] //lazy하게 접근해서 바로 초기화 안되게
     }
 
+    private fun enableBluetooth() {
+        activityResultLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(activityMainBinding?.root)
 
-        checkBluetoothSupport()
-        activateBluetooth()
+        activateBluetooth() //블루투스 활성화
     }
 
     override fun onDestroy() {
@@ -53,22 +63,46 @@ class MainActivity : AppCompatActivity() {
         viewModel.disconnect()
     }
 
-    fun checkBluetoothSupport() {
+    private fun activateBluetooth() {
+        // 블루투스 확인
         if (bluetoothManager.adapter == null) {
-            Toast.makeText(this, "블루투스를 지원하지 않습니다.", Toast.LENGTH_LONG).show()
+            createToast("블루투스를 지원하지 않습니다.")
+            finish()
+            return
+        }
+
+        // Android 12이상 블루투스 펄미션 확인. 만약 블루투스가 꺼져있다면 펄미션 허용 콜백에서 같이 킴 (enable 호출)
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), PERM_CODE)
+        else if (!bluetoothManager.adapter.isEnabled)
+            // 블루투스가 허용되지 않은경우
+            enableBluetooth()
+        else
+            // init
+            init()
+    }
+
+    private fun hasPermission(permission: String) : Boolean {
+        return ActivityCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun createToast(message : String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != PERM_CODE)
+            return
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            enableBluetooth()
+        else {
+            createToast("권한이 허용되지 않았습니다..")
             finish()
         }
     }
 
-    fun activateBluetooth() {
-        if (bluetoothManager.adapter.isEnabled)
-            // init
-            init()
-        else
-            activityResultLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-    }
-
-    fun init() {
+    private fun init() {
         // initialize - observer
         activityMainBinding?.let { binding ->
 
@@ -93,12 +127,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             viewModel.notifyLiveData.observe(this) {
-                Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+                createToast(it)
             }
 
 
             viewModel.errorLiveData.observe(this) {
-                Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+                createToast(it)
             }
 
             //연결 버튼
@@ -121,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         }
         viewModel.findDevices()
     }
+
 }
 
 fun Any.getClassName() : String = this::class.java.name

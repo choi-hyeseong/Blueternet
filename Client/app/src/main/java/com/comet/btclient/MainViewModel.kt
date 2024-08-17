@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.comet.btclient.bluetooth.domain.PairedBluetoothDevice
 import com.comet.btclient.bluetooth.repository.BlueternetRepository
+import com.comet.btclient.bluetooth.repository.RemoteInternetRepository
 import com.comet.btclient.connectivity.callback.ResponseCallback
 import com.comet.btclient.connectivity.domain.RequestJson
 import com.comet.btclient.connectivity.domain.ResponseJson
@@ -16,7 +17,7 @@ import kotlinx.coroutines.launch
 /**
  * MainActivity의 활동을 처리하는 VM
  */
-class MainViewModel(private val bluetoothRepository: BlueternetRepository) : ViewModel(), ResponseCallback {
+class MainViewModel(private val bluetoothRepository: RemoteInternetRepository) : ViewModel(), ResponseCallback {
 
     val deviceLiveData : MutableLiveData<List<PairedBluetoothDevice>> = MutableLiveData()
     val responseLiveData : MutableLiveData<String> = MutableLiveData()
@@ -95,7 +96,7 @@ class MainViewModel(private val bluetoothRepository: BlueternetRepository) : Vie
 
 }
 
-class MainViewModelFactory(private val bluetoothRepository: BlueternetRepository) : ViewModelProvider.Factory {
+class MainViewModelFactory(private val bluetoothRepository: RemoteInternetRepository) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (!modelClass.isAssignableFrom(MainViewModel::class.java))
